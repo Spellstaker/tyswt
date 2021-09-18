@@ -1,4 +1,4 @@
-import './App.sass';
+import './App.scss';
 
 function App() {
   return (

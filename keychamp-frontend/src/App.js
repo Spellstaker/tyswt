@@ -7,7 +7,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <p>Hello, World!</p>
+        <p>You're my little keychamp!</p>
         <TypeArea text={testText} />
       </header>
     </div>

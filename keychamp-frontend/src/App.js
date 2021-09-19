@@ -1,7 +1,9 @@
 import './App.scss';
 import TypeArea from './components/typearea/TypeArea'
 
-const testText = "A very interesting text";
+const testText = `A very interesting text...
+That's super fun to read...
+And that never stops giving.`;
 
 function App() {
   return (

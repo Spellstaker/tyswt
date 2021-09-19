@@ -1,19 +1,19 @@
 import React from 'react';
 import './TypeArea.scss'
 
-function Letter(props) {
+function Symbol(props) {
     return (
-        <span className="Letter">
+        <span className="Symbol">
             {props.symbol}
         </span>
     )
 }
 
-function Word(props) {
+function Token(props) {
     return (
-        <span className="Word">
+        <span className="Token">
             {props.token.split('').map(
-                (symbol, key) => <Letter key={key} symbol={symbol} />
+                (symbol, key) => <Symbol key={key} symbol={symbol} />
             )}
         </span>
     )
@@ -23,7 +23,7 @@ function Line(props) {
     return (
         <div className="Line">
             {props.line.split(' ').map(
-                (token, key) => <Word key={key} token={token} />
+                (token, key) => <Token key={key} token={token} />
             )}
         </div>
     )

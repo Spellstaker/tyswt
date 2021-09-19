@@ -3,7 +3,7 @@ import './TypeArea.scss'
 
 function Symbol(props) {
     return (
-        <span className="Symbol">
+        <span className="Symbol--valid">
             {props.symbol}
         </span>
     )
@@ -33,9 +33,11 @@ class TypeArea extends React.Component {
     constructor(props) {
         super(props);
 
+        const text = props.text ? props.text : "";
+
         this.state = {
-            text: props.text,
-            lines: props.text.split('\n').map(
+            text: text,
+            lines: text.split('\n').map(
                 (line, key) => <Line line={line} key={key} />
             ),
             currentLine: 0,

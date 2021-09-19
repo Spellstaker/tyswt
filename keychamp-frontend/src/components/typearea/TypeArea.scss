@@ -2,8 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300&display=swap');
 
 .TypeArea {
-    background-color: $nord2;
-    color: $nord8;
+    background-color: $nord3;
     
     outline: none;
     border: none;
@@ -24,14 +23,26 @@
 }
 
 .Symbol {
-    color: $nord8;
-
     text-align: left;
 
     margin: none;
     padding: none;
     width: fit-content;
     height: fit-content;
+
+
+    &--ghosted {
+        @extend .Symbol;
+        color: $nord0;
+    }
+    &--valid {
+        @extend .Symbol;
+        color: $nord8;
+    }
+    &--invalid {
+        @extend .Symbol;
+        color: $nord11;
+    }
 }
 
 .Token {

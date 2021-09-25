@@ -56,25 +56,18 @@ function Letter({ caretRef, got, want }) {
 }
 
 function Word({ activeIndex, got, want }) {
-    got = got ? got : [];
-    want = want ? want : [];
+    got = got ? got : [''];
+    want = want ? want : [''];
 
     let letters = zipTokens(got, want)
         .map(
-            ({ gotToken, wantToken }, key) => {
-                if (activeIndex && (key === activeIndex.letter)) {
-                    return <Letter
-                        key={`letter_#${key}`}
-                        got={gotToken}
-                        want={wantToken}
-                    />
-                }
-                return <Letter
+            ({ gotToken, wantToken }, key) =>
+                <Letter
                     key={`letter_#${key}`}
                     got={gotToken}
                     want={wantToken}
                 />
-            }
+
         );
 
     if (activeIndex) {
@@ -175,7 +168,7 @@ class TypeArea extends React.Component {
     }
 
     render() {
-        const beginOffset = 1, endOffset = 2;
+        const beginOffset = 2, endOffset = 5;
 
         const startIndex = Math.max(0, this.state.currentLine - beginOffset);
         const endIndex = startIndex + endOffset;
@@ -257,17 +250,19 @@ class TypeArea extends React.Component {
 
     static handleBackspace(ctrlKey) {
         return state => {
-            const line = state.currentLine, word = state.currentWord;
+            const line = state.currentLine,
+                word = state.currentWord,
+                letter = state.currentLetter;
 
             // Current word is not empty.
             if (state.gotLines[line][word].length > 0) {
                 const splice = ctrlKey ? [[0, state.gotLines[line][word].length]] : [[-1, 1]];
                 let newState = update(state, {
                     gotLines: {
-                        [state.currentLine]: { [state.currentWord]: { $splice: splice } }
+                        [line]: { [word]: { $splice: splice } }
                     }
                 });
-                newState.currentLetter = ctrlKey ? 0 : state.currentLetter - 1;
+                newState.currentLetter = ctrlKey ? 0 : letter - 1;
                 return newState;
             }
 
@@ -275,9 +270,13 @@ class TypeArea extends React.Component {
             if (word === 0) {
                 if (line === 0) return;
 
+                const newLine = line - 1;
+                const newWord = state.gotLines[newLine].length - 1;
+                const newLetter = state.gotLines[newLine][newWord].length;
                 return {
-                    currentLine: line - 1,
-                    currentWord: state.gotLines[line - 1].length - 1,
+                    currentLine: newLine,
+                    currentWord: newWord,
+                    currentLetter: newLetter
                 };
             }
 
@@ -289,7 +288,7 @@ class TypeArea extends React.Component {
                 }
             });
             newState.currentWord = word - 1;
-            newState.currentLetter = 0;
+            newState.currentLetter = newState.gotLines[line][word - 1].length;
 
             return newState;
         }

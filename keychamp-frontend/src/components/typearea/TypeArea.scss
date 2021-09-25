@@ -46,7 +46,7 @@
 }
 
 .Line {
-    // margin-bottom: 0.5em;Lor
+    // margin-bottom: 0.5em;
 }
 
 .Caret {
@@ -82,7 +82,6 @@
     text-align: left;
     font-size: larger;
     font-family: 'Fira Code';
-    font-variant-ligatures: normal;
     
     &:hover, &:focus {
         box-shadow: $nord0 0em 0.1em 0.5em;

@@ -71,7 +71,7 @@ function Word({ activeIndex, got, want }) {
         );
 
     if (activeIndex) {
-        letters.splice(activeIndex.letter, 0, <Caret />)
+        letters.splice(activeIndex.letter, 0, <Caret key="Caret" />)
     }
 
     let className = "Word";
@@ -83,13 +83,12 @@ function Word({ activeIndex, got, want }) {
     )
 }
 
-function Line({ caretRef, activeIndex, got, want }) {
+function Line({ activeIndex, got, want }) {
     const words = zipTokens(got, want)
         .map(
             ({ gotToken, wantToken }, key) => {
                 if (activeIndex && key === activeIndex.word) {
                     return <Word
-                        caretRef={caretRef}
                         activeIndex={activeIndex}
                         key={`word_#${key}`}
                         got={gotToken}
@@ -113,12 +112,11 @@ function Line({ caretRef, activeIndex, got, want }) {
     );
 }
 
-function Text({ caretRef, activeIndex, got, want }) {
+function Text({ activeIndex, got, want }) {
     const lines = zipTokens(got, want)
         .map(({ gotToken, wantToken }, key) => {
             if (activeIndex && key === activeIndex.line) {
                 return <Line
-                    caretRef={caretRef}
                     activeIndex={activeIndex}
                     key={`line_#${key}`}
                     got={gotToken}
@@ -149,8 +147,6 @@ class TypeArea extends React.Component {
             .map(line => line.split(wordSeperator)
                 .map(word => word.split(''))
             );
-
-        this.caretRef = React.createRef();
 
         this.state = {
             wantLines: wantLines,
@@ -190,7 +186,6 @@ class TypeArea extends React.Component {
                 className="TypeArea"
             >
                 {<Text
-                    caretRef={this.caretRef}
                     got={gotSlice}
                     want={wantSlice}
                     activeIndex={activeIndex}
@@ -200,14 +195,6 @@ class TypeArea extends React.Component {
     }
 
     handleInput(e) {
-        if (this.caretRef.current) {
-            const { offsetTop, offsetLeft } = this.caretRef.current;
-            this.setState({
-                caretOffsetTop: offsetTop,
-                caretOffsetLeft: offsetLeft,
-            })
-        }
-
         if (e.key.length === 1) {
             this.setState(TypeArea.handleCharacter(e.key));
         } else if (e.key === 'Enter') {

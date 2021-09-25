@@ -104,9 +104,6 @@ class TypeArea extends React.Component {
         }
 
         this.handleInput = this.handleInput.bind(this)
-        this.handleCharacter = this.handleCharacter.bind(this)
-        this.handleEnter = this.handleEnter.bind(this)
-        this.handleBackspace = this.handleBackspace.bind(this)
     }
 
     render() {
@@ -116,7 +113,6 @@ class TypeArea extends React.Component {
         const gotSlice = this.state.gotLines.slice(startIndex, endIndex);
         const wantSlice = this.state.wantLines.slice(startIndex, endIndex);
 
-        console.log(this.state.gotLines[0])
         return (
             <div
                 tabIndex={0}
@@ -130,16 +126,16 @@ class TypeArea extends React.Component {
 
     handleInput(e) {
         if (e.key.length === 1) {
-            this.handleCharacter(e.key)
+            this.setState(TypeArea.handleCharacter(e.key));
         } else if (e.key === 'Enter') {
-            this.handleEnter()
+            this.setState(TypeArea.handleEnter());
         } else if (e.key === 'Backspace') {
-            this.handleBackspace(e.ctrlKey)
+            this.setState(TypeArea.handleBackspace(e.ctrlKey))
         }
     }
 
-    handleCharacter(key) {
-        this.setState(state => {
+    static handleCharacter(key) {
+        return state => {
             let newState;
 
             if (key.match(wordSeperator)) {
@@ -156,20 +152,17 @@ class TypeArea extends React.Component {
             }
 
             return newState;
-        })
+        }
     }
-    handleEnter() {
-        this.setState(prevState => {
-            const newState = {
-                currentLine: prevState.currentLine + 1,
-                currentWord: 0,
-            };
 
-            return newState;
+    static handleEnter() {
+        return state => ({
+            currentLine: state.currentLine + 1,
+            currentWord: 0,
         })
     }
-    handleBackspace(ctrlKey) {
-        this.setState(state => {
+    static handleBackspace(ctrlKey) {
+        return state => {
             const line = state.currentLine, word = state.currentWord;
 
             // Current word is not empty.
@@ -202,7 +195,7 @@ class TypeArea extends React.Component {
             newState.currentWord = word - 1;
 
             return newState;
-        })
+        }
     }
 }
 

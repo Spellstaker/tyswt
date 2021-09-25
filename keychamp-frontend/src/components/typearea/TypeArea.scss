@@ -30,6 +30,10 @@
     }
 }
 
+.Special {
+    background-color: red;
+}
+
 .Word {
     display: inline-block;
  
@@ -44,6 +48,22 @@
 .Line {
     margin-bottom: 0.5em;
 }
+
+.Caret {
+    display: inline-block;
+    width: 2px;
+    height: 1.25em;
+
+    position: absolute;
+
+    background-color: red;
+    animation: blink 1s steps(1) infinite;
+    -webkit-animation: blink 1s steps(1) infinite;
+}
+
+
+@keyframes blink { 50% { background-color: transparent; } }
+@-webkit-keyframes blink { 50% { background-color: transparent; } }
 
 .TypeArea {
     background-color: $nord2;

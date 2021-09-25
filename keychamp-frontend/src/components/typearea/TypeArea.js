@@ -15,7 +15,14 @@ function zipTokens(got, want) {
     return tokens;
 }
 
-function Letter({ got, want }) {
+
+function Caret({ top, left }) {
+    return (
+        <span className="Caret" />
+    );
+}
+
+function Letter({ caretRef, got, want }) {
     let className = "Letter";
     let letter = want;
 
@@ -30,6 +37,16 @@ function Letter({ got, want }) {
         className = "Letter--invalid";
     }
 
+    if (caretRef) {
+        return (
+            <div
+                ref={caretRef}
+                className={`${className} Special`}
+            >
+                {letter}
+            </div>
+        );
+    }
 
     return (
         <div className={className}>
@@ -38,15 +55,31 @@ function Letter({ got, want }) {
     );
 }
 
-function Word({ got, want }) {
+function Word({ activeIndex, got, want }) {
     got = got ? got : [];
     want = want ? want : [];
 
-    const letters = zipTokens(got, want)
+    let letters = zipTokens(got, want)
         .map(
-            ({ gotToken, wantToken }, key) =>
-                <Letter key={`word_#${key}`} got={gotToken} want={wantToken} />
+            ({ gotToken, wantToken }, key) => {
+                if (activeIndex && (key === activeIndex.letter)) {
+                    return <Letter
+                        key={`letter_#${key}`}
+                        got={gotToken}
+                        want={wantToken}
+                    />
+                }
+                return <Letter
+                    key={`letter_#${key}`}
+                    got={gotToken}
+                    want={wantToken}
+                />
+            }
         );
+
+    if (activeIndex) {
+        letters.splice(activeIndex.letter, 0, <Caret />)
+    }
 
     let className = "Word";
 
@@ -57,11 +90,26 @@ function Word({ got, want }) {
     )
 }
 
-function Line({ got, want }) {
+function Line({ caretRef, activeIndex, got, want }) {
     const words = zipTokens(got, want)
         .map(
-            ({ gotToken, wantToken }, key) =>
-                <Word key={`word_#${key}`} got={gotToken} want={wantToken} />
+            ({ gotToken, wantToken }, key) => {
+                if (activeIndex && key === activeIndex.word) {
+                    return <Word
+                        caretRef={caretRef}
+                        activeIndex={activeIndex}
+                        key={`word_#${key}`}
+                        got={gotToken}
+                        want={wantToken}
+                    />
+                }
+
+                return <Word
+                    key={`word_#${key}`}
+                    got={gotToken}
+                    want={wantToken}
+                />
+            }
         )
 
 
@@ -72,11 +120,24 @@ function Line({ got, want }) {
     );
 }
 
-function Text({ got, want }) {
+function Text({ caretRef, activeIndex, got, want }) {
     const lines = zipTokens(got, want)
-        .map(({ gotToken, wantToken }, key) =>
-            <Line key={`line_#${key}`} got={gotToken} want={wantToken} />
-        )
+        .map(({ gotToken, wantToken }, key) => {
+            if (activeIndex && key === activeIndex.line) {
+                return <Line
+                    caretRef={caretRef}
+                    activeIndex={activeIndex}
+                    key={`line_#${key}`}
+                    got={gotToken}
+                    want={wantToken}
+                />
+            }
+            return <Line
+                key={`line_#${key}`}
+                got={gotToken}
+                want={wantToken}
+            />
+        })
 
     return (
         <div>
@@ -84,6 +145,7 @@ function Text({ got, want }) {
         </div>
     );
 }
+
 
 class TypeArea extends React.Component {
     constructor(props) {
@@ -93,24 +155,40 @@ class TypeArea extends React.Component {
         const wantLines = text.split(lineSeperator)
             .map(line => line.split(wordSeperator)
                 .map(word => word.split(''))
-            )
+            );
+
+        this.caretRef = React.createRef();
 
         this.state = {
             wantLines: wantLines,
             gotLines: Array.from(Array(wantLines.length), () => [[]]),
+
             currentLine: 0,
             currentWord: 0,
+            currentLetter: 0,
+
+            caretOffsetTop: 0,
+            caretOffsetLeft: 0,
         }
 
         this.handleInput = this.handleInput.bind(this)
     }
 
     render() {
-        const startIndex = Math.max(0, this.state.currentLine - 1);
-        const endIndex = this.state.currentLine + 2;
+        const beginOffset = 1, endOffset = 2;
+
+        const startIndex = Math.max(0, this.state.currentLine - beginOffset);
+        const endIndex = startIndex + endOffset;
 
         const gotSlice = this.state.gotLines.slice(startIndex, endIndex);
         const wantSlice = this.state.wantLines.slice(startIndex, endIndex);
+
+        const currentLine = Math.min(this.state.currentLine, beginOffset);
+        const activeIndex = {
+            line: currentLine,
+            word: this.state.currentWord,
+            letter: this.state.currentLetter,
+        };
 
         return (
             <div
@@ -118,12 +196,25 @@ class TypeArea extends React.Component {
                 onKeyDown={this.handleInput}
                 className="TypeArea"
             >
-                {<Text got={gotSlice} want={wantSlice} />}
+                {<Text
+                    caretRef={this.caretRef}
+                    got={gotSlice}
+                    want={wantSlice}
+                    activeIndex={activeIndex}
+                />}
             </div>
         );
     }
 
     handleInput(e) {
+        if (this.caretRef.current) {
+            const { offsetTop, offsetLeft } = this.caretRef.current;
+            this.setState({
+                caretOffsetTop: offsetTop,
+                caretOffsetLeft: offsetLeft,
+            })
+        }
+
         if (e.key.length === 1) {
             this.setState(TypeArea.handleCharacter(e.key));
         } else if (e.key === 'Enter') {
@@ -142,12 +233,14 @@ class TypeArea extends React.Component {
                     gotLines: { [state.currentLine]: { $push: [[]] } },
                 });
                 newState.currentWord = state.currentWord + 1;
+                newState.currentLetter = 0;
             } else {
                 newState = update(state, {
                     gotLines: {
                         [state.currentLine]: { [state.currentWord]: { $push: [key] } }
                     }
                 });
+                newState.currentLetter = state.currentLetter + 1;
             }
 
             return newState;
@@ -158,8 +251,10 @@ class TypeArea extends React.Component {
         return state => ({
             currentLine: state.currentLine + 1,
             currentWord: 0,
+            currentLetter: 0,
         })
     }
+
     static handleBackspace(ctrlKey) {
         return state => {
             const line = state.currentLine, word = state.currentWord;
@@ -167,11 +262,13 @@ class TypeArea extends React.Component {
             // Current word is not empty.
             if (state.gotLines[line][word].length > 0) {
                 const splice = ctrlKey ? [[0, state.gotLines[line][word].length]] : [[-1, 1]];
-                return update(state, {
+                let newState = update(state, {
                     gotLines: {
                         [state.currentLine]: { [state.currentWord]: { $splice: splice } }
                     }
-                })
+                });
+                newState.currentLetter = ctrlKey ? 0 : state.currentLetter - 1;
+                return newState;
             }
 
             // Current line is empty.
@@ -192,6 +289,7 @@ class TypeArea extends React.Component {
                 }
             });
             newState.currentWord = word - 1;
+            newState.currentLetter = 0;
 
             return newState;
         }

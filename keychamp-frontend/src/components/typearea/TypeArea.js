@@ -151,13 +151,7 @@ class TypeArea extends React.Component {
         this.state = {
             wantLines: wantLines,
             gotLines: Array.from(Array(wantLines.length), () => [[]]),
-
-            currentLine: 0,
-            currentWord: 0,
-            currentLetter: 0,
-
-            caretOffsetTop: 0,
-            caretOffsetLeft: 0,
+            activeIndex: { line: 0, word: 0, letter: 0 },
         }
 
         this.handleInput = this.handleInput.bind(this)
@@ -165,19 +159,21 @@ class TypeArea extends React.Component {
 
     render() {
         const beginOffset = 2, endOffset = 5;
+        const { line, word, letter } = this.state.activeIndex;
 
-        const startIndex = Math.max(0, this.state.currentLine - beginOffset);
+        const startIndex = Math.max(0, line - beginOffset);
         const endIndex = startIndex + endOffset;
 
         const gotSlice = this.state.gotLines.slice(startIndex, endIndex);
         const wantSlice = this.state.wantLines.slice(startIndex, endIndex);
 
-        const currentLine = Math.min(this.state.currentLine, beginOffset);
         const activeIndex = {
-            line: currentLine,
-            word: this.state.currentWord,
-            letter: this.state.currentLetter,
+            line: Math.min(line, beginOffset),
+            word: word,
+            letter: letter,
         };
+
+        console.log(this.state.activeIndex)
 
         return (
             <div
@@ -206,51 +202,52 @@ class TypeArea extends React.Component {
 
     static handleCharacter(key) {
         return state => {
-            let newState;
+            const { line, word, letter } = state.activeIndex;
 
             if (key.match(wordSeperator)) {
-                newState = update(state, {
-                    gotLines: { [state.currentLine]: { $push: [[]] } },
+                return update(state, {
+                    gotLines: { [line]: { $push: [[]] } },
+                    activeIndex: {
+                        word: { $set: word + 1 },
+                        letter: { $set: 0 },
+                    },
                 });
-                newState.currentWord = state.currentWord + 1;
-                newState.currentLetter = 0;
-            } else {
-                newState = update(state, {
-                    gotLines: {
-                        [state.currentLine]: { [state.currentWord]: { $push: [key] } }
-                    }
-                });
-                newState.currentLetter = state.currentLetter + 1;
             }
 
-            return newState;
+            return update(state, {
+                gotLines: {
+                    [line]: { [word]: { $push: [key] } }
+                },
+                activeIndex: { letter: { $set: letter + 1 } },
+            });
         }
     }
 
     static handleEnter() {
-        return state => ({
-            currentLine: state.currentLine + 1,
-            currentWord: 0,
-            currentLetter: 0,
+        return state => update(state, {
+            activeIndex: {
+                line: { $set: state.activeIndex.line + 1 },
+                word: { $set: 0 },
+                letter: { $set: 0 },
+            }
         })
     }
 
     static handleBackspace(ctrlKey) {
         return state => {
-            const line = state.currentLine,
-                word = state.currentWord,
-                letter = state.currentLetter;
+            const { line, word, letter } = state.activeIndex;
 
             // Current word is not empty.
             if (state.gotLines[line][word].length > 0) {
                 const splice = ctrlKey ? [[0, state.gotLines[line][word].length]] : [[-1, 1]];
-                let newState = update(state, {
+                return update(state, {
                     gotLines: {
                         [line]: { [word]: { $splice: splice } }
-                    }
+                    },
+                    activeIndex: {
+                        letter: { $set: ctrlKey ? 0 : letter - 1 },
+                    },
                 });
-                newState.currentLetter = ctrlKey ? 0 : letter - 1;
-                return newState;
             }
 
             // Current line is empty.
@@ -261,23 +258,25 @@ class TypeArea extends React.Component {
                 const newWord = state.gotLines[newLine].length - 1;
                 const newLetter = state.gotLines[newLine][newWord].length;
                 return {
-                    currentLine: newLine,
-                    currentWord: newWord,
-                    currentLetter: newLetter
+                    activeIndex: {
+                        line: newLine,
+                        word: newWord,
+                        letter: newLetter,
+                    }
                 };
             }
 
             // Delete current word.
             const splice = ctrlKey ? [[word, 1], [word - 1, 1, []]] : [[word, 1]];
-            let newState = update(state, {
+            return update(state, {
                 gotLines: {
-                    [state.currentLine]: { $splice: splice }
+                    [line]: { $splice: splice }
+                },
+                activeIndex: {
+                    word: { $set: word - 1 },
+                    letter: { $set: 0 },
                 }
             });
-            newState.currentWord = word - 1;
-            newState.currentLetter = newState.gotLines[line][word - 1].length;
-
-            return newState;
         }
     }
 }

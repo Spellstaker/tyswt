@@ -10,7 +10,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <p>You're my little keychamp!</p>
-        <TypeArea text={testText} />
+        <TypeArea>{testText}</TypeArea>
       </header>
     </div>
   );

@@ -1,9 +1,55 @@
 @import "~nord/src/sass/nord.scss";
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300&display=swap');
 
+.Letter {
+    display: inline-block;
+
+    text-align: left;
+
+    margin: none;
+    padding: none;
+    width: fit-content;
+    height: fit-content;
+
+
+    &--ghosted {
+        @extend .Letter;
+       color: $nord0;
+    }
+    &--valid {
+        @extend .Letter;
+        color: $nord8;
+    }
+    &--invalid {
+        @extend .Letter;
+        color: $nord12;
+    }
+    &--extra {
+        @extend .Letter;
+        color: $nord11;
+    }
+}
+
+.Word {
+    display: inline-block;
+ 
+    margin: 0 0.5em 0 0;
+
+    &--invalid {
+        @extend .Word;
+        border-bottom: 0.1em solid red;
+    }
+}
+
+.Line {
+    margin-bottom: 0.5em;
+}
+
 .TypeArea {
-    background-color: $nord3;
+    background-color: $nord2;
     
+    overflow-wrap: break-word;
+
     outline: none;
     border: none;
     border-radius: 0.25em;
@@ -19,36 +65,5 @@
     
     &:hover, &:focus {
         box-shadow: $nord0 0em 0.1em 0.5em;
-    }
-}
-
-.Symbol {
-    text-align: left;
-
-    margin: none;
-    padding: none;
-    width: fit-content;
-    height: fit-content;
-
-
-    &--ghosted {
-        @extend .Symbol;
-        color: $nord0;
-    }
-    &--valid {
-        @extend .Symbol;
-        color: $nord8;
-    }
-    &--invalid {
-        @extend .Symbol;
-        color: $nord11;
-    }
-}
-
-.Token {
-    margin: 0 0.5em 0 0;
-}
-
-.Line {
-    margin-top: 0.5em;
+    }   
 }

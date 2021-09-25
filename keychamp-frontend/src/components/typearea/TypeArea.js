@@ -100,7 +100,6 @@ class TypeArea extends React.Component {
             gotLines: Array.from(Array(wantLines.length), () => [[]]),
             currentLine: 0,
             currentWord: 0,
-            collection: [1, 2, 3, 4, 5],
         }
 
         this.handleInput = this.handleInput.bind(this)

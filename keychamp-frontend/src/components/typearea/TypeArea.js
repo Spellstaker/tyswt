@@ -55,7 +55,7 @@ function Letter({ caretRef, got, want }) {
     );
 }
 
-function Word({ activeIndex, got, want }) {
+function Word({ activeIndex, currentIndex, got, want }) {
     got = got ? got : [''];
     want = want ? want : [''];
 
@@ -70,11 +70,23 @@ function Word({ activeIndex, got, want }) {
 
         );
 
-    if (activeIndex) {
+    if (activeIndex.line === currentIndex.line && activeIndex.word === currentIndex.word) {
         letters.splice(activeIndex.letter, 0, <Caret key="Caret" />)
     }
 
     let className = "Word";
+    if (
+        (
+            currentIndex.line < activeIndex.line ||
+            (
+                currentIndex.line === activeIndex.line &&
+                currentIndex.word < activeIndex.word
+            )
+        ) &&
+        JSON.stringify(got) !== JSON.stringify(want)
+    ) {
+        className = "Word--invalid";
+    }
 
     return (
         <div className={className}>
@@ -83,30 +95,31 @@ function Word({ activeIndex, got, want }) {
     )
 }
 
-function Line({ activeIndex, got, want }) {
+function Line({ activeIndex, currentIndex, got, want }) {
     const words = zipTokens(got, want)
         .map(
             ({ gotToken, wantToken }, key) => {
-                if (activeIndex && key === activeIndex.word) {
-                    return <Word
-                        activeIndex={activeIndex}
-                        key={`word_#${key}`}
-                        got={gotToken}
-                        want={wantToken}
-                    />
-                }
-
                 return <Word
                     key={`word_#${key}`}
+                    activeIndex={activeIndex}
+                    currentIndex={{ ...currentIndex, word: key }}
                     got={gotToken}
                     want={wantToken}
                 />
             }
-        )
+        );
 
+    const gotLine = JSON.stringify(got), wantLine = JSON.stringify(want);
+    let className = "Line";
+    if (currentIndex.line < activeIndex.line && gotLine !== wantLine) {
+        className = "Line--invalid";
+    }
+    if (currentIndex.line === activeIndex.line) {
+        className = "Line--active";
+    }
 
     return (
-        <div className="Line">
+        <div className={className}>
             {words}
         </div>
     );
@@ -115,16 +128,14 @@ function Line({ activeIndex, got, want }) {
 function Text({ activeIndex, got, want }) {
     const lines = zipTokens(got, want)
         .map(({ gotToken, wantToken }, key) => {
-            if (activeIndex && key === activeIndex.line) {
-                return <Line
-                    activeIndex={activeIndex}
-                    key={`line_#${key}`}
-                    got={gotToken}
-                    want={wantToken}
-                />
-            }
+            const currentIndex = {
+                ...activeIndex,
+                line: key,
+            };
             return <Line
                 key={`line_#${key}`}
+                activeIndex={activeIndex}
+                currentIndex={currentIndex}
                 got={gotToken}
                 want={wantToken}
             />
@@ -158,7 +169,7 @@ class TypeArea extends React.Component {
     }
 
     render() {
-        const beginOffset = 2, endOffset = 5;
+        const beginOffset = 3, endOffset = 5;
         const { line, word, letter } = this.state.activeIndex;
 
         const startIndex = Math.max(0, line - beginOffset);
@@ -172,8 +183,6 @@ class TypeArea extends React.Component {
             word: word,
             letter: letter,
         };
-
-        console.log(this.state.activeIndex)
 
         return (
             <div
@@ -245,7 +254,7 @@ class TypeArea extends React.Component {
                         [line]: { [word]: { $splice: splice } }
                     },
                     activeIndex: {
-                        letter: { $set: ctrlKey ? 0 : letter - 1 },
+                        letter: { $set: (ctrlKey ? 0 : letter - 1) },
                     },
                 });
             }
@@ -268,13 +277,14 @@ class TypeArea extends React.Component {
 
             // Delete current word.
             const splice = ctrlKey ? [[word, 1], [word - 1, 1, []]] : [[word, 1]];
+            const newLetter = ctrlKey ? 0 : state.gotLines[line][word - 1].length;
             return update(state, {
                 gotLines: {
                     [line]: { $splice: splice }
                 },
                 activeIndex: {
                     word: { $set: word - 1 },
-                    letter: { $set: 0 },
+                    letter: { $set: newLetter },
                 }
             });
         }

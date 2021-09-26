@@ -41,12 +41,23 @@
 
     &--invalid {
         @extend .Word;
-        border-bottom: 0.1em solid red;
+        border-bottom: 0.05em solid red;
     }
 }
 
 .Line {
-    // margin-bottom: 0.5em;
+    margin: none;
+
+    &--active {
+        @extend .Line;
+        background-color: $nord3;
+    }
+
+    &--invalid {
+        @extend .Line;
+        background-color: $nord1;
+        border-left: 0.05em solid red;
+    }
 }
 
 .Caret {

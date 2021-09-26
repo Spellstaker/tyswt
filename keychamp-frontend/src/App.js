@@ -1,7 +1,8 @@
 import './App.scss';
 import TypeArea from './components/typearea/TypeArea'
 
-const testText = `Lorem ipsum dolor sit amet,
+const testText = `uwu
+Lorem ipsum dolor sit amet,
 consectetur adipiscing elit,
 sed do eiusmod tempor incididunt ut
 labore et dolore magna aliqua.

@@ -196,10 +196,12 @@ class TypeArea extends React.Component {
             activeIndex: { line: 0, word: 0, letter: 0 },
             startTime: Date.now(),
             seconds: 0,
+            completedText: false,
         }
 
         this.handleInput = this.handleInput.bind(this);
         this.tick = this.tick.bind(this);
+        this.startTicking = this.startTicking.bind(this);
     }
 
     tick() {
@@ -209,20 +211,41 @@ class TypeArea extends React.Component {
     }
 
     startTicking() {
-        this.timerID = setInterval(() => this.tick(), 100)
+        if (!this.timerID)
+            this.timerID = setInterval(() => this.tick(), 100)
     }
     stopTicking() {
         clearInterval(this.timerID);
+        this.timerID = undefined;
     }
 
-    componentDidMount() {
-        this.startTicking();
-    }
     componentWillUnmount() {
         this.stopTicking();
     }
 
     render() {
+        if (!this.state.completedText) {
+            return this.renderTypeArea()
+        }
+        return this.renderResult();
+    }
+
+    renderResult() {
+        this.stopTicking();
+        const seconds = this.state.seconds.toFixed(1);
+        const validCharCount = countValidCharacters(this.state.gotLines, this.state.wantLines);
+        const wpm = (validCharCount / seconds).toFixed(2);
+
+        return (
+            <div className="Result">
+                <p> <span className="ResultKey">Valid Keys</span> {validCharCount}</p>
+                <p> <span className="ResultKey">Time taken</span> {seconds}</p>
+                <p> <span className="ResultKey">WPM</span> {wpm}</p>
+            </div>
+        );
+    }
+
+    renderTypeArea() {
         const beginOffset = 3, endOffset = 5;
         const { line, word, letter } = this.state.activeIndex;
 
@@ -239,12 +262,17 @@ class TypeArea extends React.Component {
         };
 
         return (
-            <div>
+            <div
+                onFocus={this.startTicking}
+            >
                 <Timer seconds={this.state.seconds} />
                 <Count
                     got={this.state.gotLines}
                     want={this.state.wantLines}
                 />
+                {this.state.completedText &&
+                    <span>Woo!</span>
+                }
                 <div
                     tabIndex={0}
                     onKeyDown={this.handleInput}
@@ -295,13 +323,23 @@ class TypeArea extends React.Component {
     }
 
     static handleEnter() {
-        return state => update(state, {
-            activeIndex: {
-                line: { $set: state.activeIndex.line + 1 },
-                word: { $set: 0 },
-                letter: { $set: 0 },
+        return state => {
+            const lineCount = state.wantLines.length;
+            let lineIndex = state.activeIndex.line + 1;
+            let completedText = state.completedText;
+            if (lineIndex === lineCount) {
+                completedText = true;
+                lineIndex--;
             }
-        })
+            return update(state, {
+                activeIndex: {
+                    line: { $set: lineIndex },
+                    word: { $set: 0 },
+                    letter: { $set: 0 },
+                },
+                completedText: { $set: completedText },
+            })
+        }
     }
 
     static handleBackspace(ctrlKey) {

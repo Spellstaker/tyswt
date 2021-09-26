@@ -233,20 +233,23 @@ class TypeArea extends React.Component {
     renderResult() {
         this.stopTicking();
         const seconds = this.state.seconds.toFixed(1);
-        const validCharCount = countValidCharacters(this.state.gotLines, this.state.wantLines);
-        const wpm = (validCharCount / seconds).toFixed(2);
+        const minutes = this.state.seconds / 60;
+        const validChars = countValidCharacters(this.state.gotLines, this.state.wantLines);
+        const validWords = validChars / 5;
+        const wpm = (validWords / minutes).toFixed(2);
 
         return (
             <div className="Result">
-                <p> <span className="ResultKey">Valid Keys</span> {validCharCount}</p>
-                <p> <span className="ResultKey">Time taken</span> {seconds}</p>
+                <p> <span className="ResultKey">Valid Keys</span> {validChars}</p>
+                <p> <span className="ResultKey">Valid Words</span> {validWords}</p>
+                <p> <span className="ResultKey">Time taken</span> {seconds}<span className="ResultKey">s</span></p>
                 <p> <span className="ResultKey">WPM</span> {wpm}</p>
             </div>
         );
     }
 
     renderTypeArea() {
-        const beginOffset = 3, endOffset = 5;
+        const beginOffset = 1, endOffset = 3;
         const { line, word, letter } = this.state.activeIndex;
 
         const startIndex = Math.max(0, line - beginOffset);

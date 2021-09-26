@@ -46,7 +46,9 @@
 }
 
 .Line {
-    margin: none;
+    margin: 0 0 0.2em 0;
+    border-radius: 1em;
+    padding: 0.25em 0.5em;
 
     &--active {
         @extend .Line;
@@ -56,7 +58,6 @@
     &--invalid {
         @extend .Line;
         background-color: $nord1;
-        border-left: 0.05em solid red;
     }
 }
 
@@ -68,14 +69,17 @@
 
     position: absolute;
 
-    background-color: red;
+    background-color: $nord6;
     animation: blink 1s steps(1) infinite;
     -webkit-animation: blink 1s steps(1) infinite;
 }
 
-
 @keyframes blink { 50% { background-color: transparent; } }
 @-webkit-keyframes blink { 50% { background-color: transparent; } }
+
+.Count {
+    margin: 1em;
+}
 
 .TypeArea {
     background-color: $nord2;
@@ -84,10 +88,10 @@
 
     outline: none;
     border: none;
-    border-radius: 0.25em;
+    border-radius: 0.5em;
    
-    padding: 2em;
-    width: 3Lo0em;
+    padding: 1em;
+    width: 30em;
     height: 30vh;
 
     text-align: left;

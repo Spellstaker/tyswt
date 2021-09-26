@@ -70,22 +70,24 @@ function Word({ activeIndex, currentIndex, got, want }) {
 
         );
 
-    if (activeIndex.line === currentIndex.line && activeIndex.word === currentIndex.word) {
+    if (
+        activeIndex.line === currentIndex.line &&
+        activeIndex.word === currentIndex.word
+    ) {
         letters.splice(activeIndex.letter, 0, <Caret key="Caret" />)
     }
 
     let className = "Word";
     if (
+        currentIndex.line < activeIndex.line ||
         (
-            currentIndex.line < activeIndex.line ||
-            (
-                currentIndex.line === activeIndex.line &&
-                currentIndex.word < activeIndex.word
-            )
-        ) &&
-        JSON.stringify(got) !== JSON.stringify(want)
+            currentIndex.line === activeIndex.line &&
+            currentIndex.word < activeIndex.word
+        )
+
     ) {
-        className = "Word--invalid";
+        if (JSON.stringify(got) !== JSON.stringify(want))
+            className = "Word--invalid";
     }
 
     return (
@@ -98,15 +100,15 @@ function Word({ activeIndex, currentIndex, got, want }) {
 function Line({ activeIndex, currentIndex, got, want }) {
     const words = zipTokens(got, want)
         .map(
-            ({ gotToken, wantToken }, key) => {
-                return <Word
+            ({ gotToken, wantToken }, key) =>
+                <Word
                     key={`word_#${key}`}
                     activeIndex={activeIndex}
                     currentIndex={{ ...currentIndex, word: key }}
                     got={gotToken}
                     want={wantToken}
                 />
-            }
+
         );
 
     const gotLine = JSON.stringify(got), wantLine = JSON.stringify(want);
@@ -128,14 +130,10 @@ function Line({ activeIndex, currentIndex, got, want }) {
 function Text({ activeIndex, got, want }) {
     const lines = zipTokens(got, want)
         .map(({ gotToken, wantToken }, key) => {
-            const currentIndex = {
-                ...activeIndex,
-                line: key,
-            };
             return <Line
                 key={`line_#${key}`}
                 activeIndex={activeIndex}
-                currentIndex={currentIndex}
+                currentIndex={{ line: key }}
                 got={gotToken}
                 want={wantToken}
             />
@@ -148,6 +146,39 @@ function Text({ activeIndex, got, want }) {
     );
 }
 
+function countValidCharacters(got, want) {
+    if (got === undefined || want === undefined)
+        return 0;
+
+    if (typeof want === "string") {
+        return got === want ? 1 : 0;
+    }
+
+    let validCount = 0;
+    for (const i in want) {
+        validCount += countValidCharacters(got[i], want[i])
+    }
+
+    return validCount;
+}
+
+function Count({ got, want }) {
+    const validCount = countValidCharacters(got, want);
+
+    return (
+        <div className="Count">
+            {validCount}
+        </div>
+    );
+}
+
+function Timer({ seconds }) {
+    return (
+        <div>
+            {seconds.toFixed(1)}
+        </div>
+    )
+}
 
 class TypeArea extends React.Component {
     constructor(props) {
@@ -163,9 +194,32 @@ class TypeArea extends React.Component {
             wantLines: wantLines,
             gotLines: Array.from(Array(wantLines.length), () => [[]]),
             activeIndex: { line: 0, word: 0, letter: 0 },
+            startTime: Date.now(),
+            seconds: 0,
         }
 
-        this.handleInput = this.handleInput.bind(this)
+        this.handleInput = this.handleInput.bind(this);
+        this.tick = this.tick.bind(this);
+    }
+
+    tick() {
+        this.setState(state => ({
+            seconds: (Date.now() - state.startTime) / 1000,
+        }))
+    }
+
+    startTicking() {
+        this.timerID = setInterval(() => this.tick(), 100)
+    }
+    stopTicking() {
+        clearInterval(this.timerID);
+    }
+
+    componentDidMount() {
+        this.startTicking();
+    }
+    componentWillUnmount() {
+        this.stopTicking();
     }
 
     render() {
@@ -185,17 +239,25 @@ class TypeArea extends React.Component {
         };
 
         return (
-            <div
-                tabIndex={0}
-                onKeyDown={this.handleInput}
-                className="TypeArea"
-            >
-                {<Text
-                    got={gotSlice}
-                    want={wantSlice}
-                    activeIndex={activeIndex}
-                />}
-            </div>
+            <div>
+                <Timer seconds={this.state.seconds} />
+                <Count
+                    got={this.state.gotLines}
+                    want={this.state.wantLines}
+                />
+                <div
+                    tabIndex={0}
+                    onKeyDown={this.handleInput}
+                    className="TypeArea"
+                >
+                    {<Text
+                        got={gotSlice}
+                        want={wantSlice}
+                        activeIndex={activeIndex}
+                    />}
+                </div>
+            </div >
+
         );
     }
 

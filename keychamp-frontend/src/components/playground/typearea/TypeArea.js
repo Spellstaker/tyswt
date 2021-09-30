@@ -162,23 +162,7 @@ function countValidCharacters(got, want) {
     return validCount;
 }
 
-function Count({ got, want }) {
-    const validCount = countValidCharacters(got, want);
 
-    return (
-        <div className="Count">
-            {validCount}
-        </div>
-    );
-}
-
-function Timer({ seconds }) {
-    return (
-        <div>
-            {seconds.toFixed(1)}
-        </div>
-    )
-}
 
 class TypeArea extends React.Component {
     constructor(props) {
@@ -200,55 +184,9 @@ class TypeArea extends React.Component {
         }
 
         this.handleInput = this.handleInput.bind(this);
-        this.tick = this.tick.bind(this);
-        this.startTicking = this.startTicking.bind(this);
-    }
-
-    tick() {
-        this.setState(state => ({
-            seconds: (Date.now() - state.startTime) / 1000,
-        }))
-    }
-
-    startTicking() {
-        if (!this.timerID)
-            this.timerID = setInterval(() => this.tick(), 100)
-    }
-    stopTicking() {
-        clearInterval(this.timerID);
-        this.timerID = undefined;
-    }
-
-    componentWillUnmount() {
-        this.stopTicking();
     }
 
     render() {
-        if (!this.state.completedText) {
-            return this.renderTypeArea()
-        }
-        return this.renderResult();
-    }
-
-    renderResult() {
-        this.stopTicking();
-        const seconds = this.state.seconds.toFixed(1);
-        const minutes = this.state.seconds / 60;
-        const validChars = countValidCharacters(this.state.gotLines, this.state.wantLines);
-        const validWords = validChars / 5;
-        const wpm = (validWords / minutes).toFixed(2);
-
-        return (
-            <div className="Result">
-                <p> <span className="ResultKey">Valid Keys</span> {validChars}</p>
-                <p> <span className="ResultKey">Valid Words</span> {validWords}</p>
-                <p> <span className="ResultKey">Time taken</span> {seconds}<span className="ResultKey">s</span></p>
-                <p> <span className="ResultKey">WPM</span> {wpm}</p>
-            </div>
-        );
-    }
-
-    renderTypeArea() {
         const beginOffset = 1, endOffset = 3;
         const { line, word, letter } = this.state.activeIndex;
 
@@ -265,19 +203,9 @@ class TypeArea extends React.Component {
         };
 
         return (
-            <div
-                onFocus={this.startTicking}
-            >
-                <Timer seconds={this.state.seconds} />
-                <Count
-                    got={this.state.gotLines}
-                    want={this.state.wantLines}
-                />
-                {this.state.completedText &&
-                    <span>Woo!</span>
-                }
+            <div>
                 <div
-                    tabIndex={0}
+                    tabIndex={1}
                     onKeyDown={this.handleInput}
                     className="TypeArea"
                 >
@@ -293,12 +221,19 @@ class TypeArea extends React.Component {
     }
 
     handleInput(e) {
+        const callBack = () => {
+            const validChars = countValidCharacters(
+                this.state.gotLines,
+                this.state.wantLines
+            );
+            this.props.onChange(validChars, this.state.completedText);
+        }
         if (e.key.length === 1) {
-            this.setState(TypeArea.handleCharacter(e.key));
+            this.setState(TypeArea.handleCharacter(e.key), callBack);
         } else if (e.key === 'Enter') {
-            this.setState(TypeArea.handleEnter());
+            this.setState(TypeArea.handleEnter(), callBack);
         } else if (e.key === 'Backspace') {
-            this.setState(TypeArea.handleBackspace(e.ctrlKey))
+            this.setState(TypeArea.handleBackspace(e.ctrlKey), callBack);
         }
     }
 

@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import TypeArea from './TypeArea'
 
 test('TypeArea renders', () => {
-  render(<TypeArea text="A random text!" />);
+  render(<TypeArea>A random text!</TypeArea>);
 });
 
 test('TypeArea renders undefined text', () => {

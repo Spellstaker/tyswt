@@ -1,0 +1,24 @@
+@import "~nord/src/sass/nord.scss";
+
+.Result {
+    background-color: $nord2;
+    color: $nord4;    
+
+    outline: none;
+    border: none;
+    border-radius: 0.5em;
+   
+    padding: 1em;
+    width: 30em;
+    height: 30vh;
+
+    font-size: larger;
+    
+    &:hover, &:focus {
+        box-shadow: $nord0 0em 0.1em 0.5em;
+    }  
+}
+
+.ResultKey {
+    color: $nord0;
+}

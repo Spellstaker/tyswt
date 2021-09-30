@@ -194,7 +194,6 @@ class TypeArea extends React.Component {
             seconds: 0,
             completedText: false,
         }
-        console.log(this.state)
 
         this.handleInput = this.handleInput.bind(this);
     }
@@ -234,8 +233,6 @@ class TypeArea extends React.Component {
     }
 
     handleInput(e) {
-        console.log(JSON.stringify(this.state.gotLines))
-
         const callBack = () => {
             const validChars = countValidCharacters(
                 this.state.gotLines,

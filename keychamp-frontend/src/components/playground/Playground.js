@@ -90,7 +90,7 @@ class Playground extends React.Component {
 
     onChange(validChars, completedText) {
         if (this.state.gameState === GameState.WAITING) {
-            // this.startTicking();
+            this.startTicking();
             this.setState(
                 state => update(state, { gameState: { $set: GameState.PLAYING } })
             );

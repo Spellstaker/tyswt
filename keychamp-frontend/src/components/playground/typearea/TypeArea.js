@@ -280,7 +280,7 @@ class TypeArea extends React.Component {
             const lineCount = state.wantLines.length;
             const lineIndex = line + 1;
 
-            const completedText = state.completedText || lineIndex === lineCount;
+            const completedText = lineIndex === lineCount;
 
             let updateSpec = {
                 gotLines: {

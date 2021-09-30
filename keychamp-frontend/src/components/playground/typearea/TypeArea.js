@@ -5,6 +5,8 @@ import update from 'react-addons-update';
 const wordSeperator = /\s/;
 const lineSeperator = '\n';
 
+const returnKey = "↵";
+
 function zipTokens(got, want) {
     const tokens = Array(Math.max(got.length, want.length))
         .fill()
@@ -16,7 +18,7 @@ function zipTokens(got, want) {
 }
 
 
-function Caret({ top, left }) {
+function Caret() {
     return (
         <span className="Caret" />
     );
@@ -56,8 +58,8 @@ function Letter({ caretRef, got, want }) {
 }
 
 function Word({ activeIndex, currentIndex, got, want }) {
-    got = got ? got : [''];
-    want = want ? want : [''];
+    got = got && got.length > 0 ? got : [""];
+    want = want && want.length > 0 ? want : [""];
 
     let letters = zipTokens(got, want)
         .map(
@@ -67,7 +69,6 @@ function Word({ activeIndex, currentIndex, got, want }) {
                     got={gotToken}
                     want={wantToken}
                 />
-
         );
 
     if (
@@ -86,8 +87,9 @@ function Word({ activeIndex, currentIndex, got, want }) {
         )
 
     ) {
-        if (JSON.stringify(got) !== JSON.stringify(want))
+        if (JSON.stringify(got) !== JSON.stringify(want)) {
             className = "Word--invalid";
+        }
     }
 
     return (
@@ -162,8 +164,6 @@ function countValidCharacters(got, want) {
     return validCount;
 }
 
-
-
 class TypeArea extends React.Component {
     constructor(props) {
         super(props);
@@ -171,23 +171,36 @@ class TypeArea extends React.Component {
         const text = props.children ? props.children : "";
         const wantLines = text.split(lineSeperator)
             .map(line => line.split(wordSeperator)
-                .map(word => word.split(''))
-            );
+                .map(word => word.split('')));
+        const gotLines = Array.from(Array(wantLines.length), () => [[]]);
 
+        for (const line of wantLines) {
+            line[line.length - 1].push(returnKey)
+        }
+
+        let wordIndex = 0;
+        while (
+            wordIndex < wantLines[0].length - 1 &&
+            wantLines[0][wordIndex].length === 0
+        ) {
+            wordIndex++;
+            gotLines[0].push([]);
+        }
         this.state = {
             wantLines: wantLines,
-            gotLines: Array.from(Array(wantLines.length), () => [[]]),
-            activeIndex: { line: 0, word: 0, letter: 0 },
+            gotLines: gotLines,
+            activeIndex: { line: 0, word: wordIndex, letter: 0 },
             startTime: Date.now(),
             seconds: 0,
             completedText: false,
         }
+        console.log(this.state)
 
         this.handleInput = this.handleInput.bind(this);
     }
 
     render() {
-        const beginOffset = 1, endOffset = 3;
+        const beginOffset = 5, endOffset = 5;
         const { line, word, letter } = this.state.activeIndex;
 
         const startIndex = Math.max(0, line - beginOffset);
@@ -221,13 +234,16 @@ class TypeArea extends React.Component {
     }
 
     handleInput(e) {
+        console.log(JSON.stringify(this.state.gotLines))
+
         const callBack = () => {
             const validChars = countValidCharacters(
                 this.state.gotLines,
                 this.state.wantLines
             );
             this.props.onChange(validChars, this.state.completedText);
-        }
+        };
+
         if (e.key.length === 1) {
             this.setState(TypeArea.handleCharacter(e.key), callBack);
         } else if (e.key === 'Enter') {
@@ -262,21 +278,41 @@ class TypeArea extends React.Component {
 
     static handleEnter() {
         return state => {
+            const { line, word } = state.activeIndex;
+
             const lineCount = state.wantLines.length;
-            let lineIndex = state.activeIndex.line + 1;
-            let completedText = state.completedText;
-            if (lineIndex === lineCount) {
-                completedText = true;
-                lineIndex--;
-            }
-            return update(state, {
+            const lineIndex = line + 1;
+
+            const completedText = state.completedText || lineIndex === lineCount;
+
+            let updateSpec = {
+                gotLines: {
+                    [line]: { [word]: { $push: [returnKey] } },
+                },
                 activeIndex: {
-                    line: { $set: lineIndex },
+                    line: { $set: Math.min(lineIndex, lineCount) },
                     word: { $set: 0 },
                     letter: { $set: 0 },
                 },
                 completedText: { $set: completedText },
-            })
+            };
+
+            let wordIndex = 0;
+            if (lineIndex < lineCount) {
+                let newGotLine = [];
+                const currentLine = state.wantLines[lineIndex];
+                while (
+                    wordIndex < currentLine.length - 1 &&
+                    currentLine[wordIndex].length === 0
+                ) {
+                    newGotLine.push([]);
+                    wordIndex++;
+                }
+                updateSpec.gotLines[lineIndex] = { $push: newGotLine };
+            }
+            updateSpec.activeIndex.word = { $set: wordIndex };
+
+            return update(state, updateSpec);
         }
     }
 

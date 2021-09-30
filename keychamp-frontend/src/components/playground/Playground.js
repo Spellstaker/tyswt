@@ -5,12 +5,10 @@ import TypeArea from './typearea/TypeArea';
 import Result from './result/Result';
 import Timer from './timer/Timer';
 
-const testText = `In number theory, the Chinese remainder
-theorem states that if one knows the remainders of the
-Euclidean division of an integer n by several integers,
-then one can determine uniquely the remainder of the
-division of n by the product of these integers, under
-the condition that the divisors are pairwise coprime.`;
+const testText = `for _ in range(int(input())):
+    n, m = map(int, input().split())
+    l = [*map(int, input().split())]
+    print(min(m, sum(l)))`;
 
 const GameState = Object.freeze({
     WAITING: Symbol("WAITING"),
@@ -92,7 +90,7 @@ class Playground extends React.Component {
 
     onChange(validChars, completedText) {
         if (this.state.gameState === GameState.WAITING) {
-            this.startTicking();
+            // this.startTicking();
             this.setState(
                 state => update(state, { gameState: { $set: GameState.PLAYING } })
             );

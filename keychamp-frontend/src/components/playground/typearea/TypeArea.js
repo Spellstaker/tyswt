@@ -154,14 +154,17 @@ class Token {
         return symbols;
     }
 
-    countValidChars() {
-        let count = 0;
+    getCount() {
+        let validCount = 0, wantCount = 0;
         for (let { got, want } of this.zipSymbols()) {
-            if (got === want && want !== "") {
-                count++;
+            if (want !== "") {
+                wantCount++;
+                if (got === want) {
+                    validCount++;
+                }
             }
         }
-        return count;
+        return { validCount, wantCount };
     }
 }
 
@@ -237,13 +240,15 @@ class TypeArea extends React.Component {
 
     handleInput(e) {
         const callBack = () => {
-            let validChars = 0;
+            let validChars = 0, wantChars = 0;
             for (let line of this.state.lines) {
                 for (let token of line) {
-                    validChars += token.countValidChars();
+                    const { validCount, wantCount } = token.getCount();
+                    validChars += validCount;
+                    wantChars += wantCount;
                 }
             }
-            this.props.onChange(validChars, this.state.completedText);
+            this.props.onChange(this.state.completedText, validChars, wantChars);
         };
 
         if (e.key.length === 1) {

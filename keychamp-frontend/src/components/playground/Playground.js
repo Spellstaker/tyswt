@@ -28,6 +28,7 @@ class Playground extends React.Component {
             seconds: 0,
             startTime: null,
             validChars: 0,
+            wantChars: 0,
             gameState: GameState.WAITING,
         };
 
@@ -74,6 +75,7 @@ class Playground extends React.Component {
             <Result
                 seconds={this.state.seconds}
                 validChars={this.state.validChars}
+                wantChars={this.state.wantChars}
             />
         );
     }
@@ -90,7 +92,7 @@ class Playground extends React.Component {
         this.typeAreaRef.current.focus();
     }
 
-    onChange(validChars, completedText) {
+    onChange(completedText, validChars, wantChars) {
         if (this.state.gameState === GameState.WAITING) {
             this.startTicking();
             this.setState(
@@ -99,7 +101,10 @@ class Playground extends React.Component {
         }
 
         this.setState(
-            state => update(state, { validChars: { $set: validChars } })
+            state => update(state, {
+                validChars: { $set: validChars },
+                wantChars: { $set: wantChars },
+            })
         );
 
         if (completedText) {

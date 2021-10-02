@@ -15,9 +15,9 @@ function Caret() {
     );
 }
 
-function displayLetter(want) {
+function displayLetter(want, showSpace = false) {
     switch (want) {
-        case " ": return "\u00A0";
+        case " ": return showSpace ? "\u00B7" : "\u00A0";
         case "\n": return returnKey;
         default: return want;
     }
@@ -33,7 +33,7 @@ function Letter({ got, want }) {
         className = "Letter--ghosted";
     } else if (want === "") {
         className = "Letter--extra";
-        letter = displayLetter(got);
+        letter = displayLetter(got, true);
     } else {
         className = "Letter--invalid";
     }

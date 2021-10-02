@@ -40,6 +40,8 @@
     min-width: 2px;
     min-height: 1em;
 
+    margin: 0.1em;
+
     &--invalid {
         @extend .Word;
         border-bottom: 0.05em solid red;

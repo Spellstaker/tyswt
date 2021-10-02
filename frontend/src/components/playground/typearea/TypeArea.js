@@ -258,8 +258,6 @@ class TypeArea extends React.Component {
         } else if (e.key === 'Backspace') {
             this.setState(TypeArea.handleBackspace(e.ctrlKey), callBack);
         }
-
-
     }
 
     static handleCharacter(key) {

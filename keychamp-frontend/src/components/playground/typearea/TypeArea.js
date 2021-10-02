@@ -3,20 +3,11 @@ import './TypeArea.scss'
 import update from 'react-addons-update';
 
 const wordSeperator = /\s/;
+const whiteSpace = /\s/;
 const lineSeperator = '\n';
 
 const returnKey = "↵";
-
-function zipTokens(got, want) {
-    const tokens = Array(Math.max(got.length, want.length))
-        .fill()
-        .map((_, i) => ({
-            gotToken: got[i] ? got[i] : "",
-            wantToken: want[i] ? want[i] : "",
-        }))
-    return tokens;
-}
-
+const spaceKey = "⎵";
 
 function Caret() {
     return (
@@ -24,9 +15,17 @@ function Caret() {
     );
 }
 
-function Letter({ caretRef, got, want }) {
+function displayLetter(want) {
+    switch (want) {
+        case " ": return "\u00A0";
+        case "\n": return returnKey;
+        default: return want;
+    }
+}
+
+function Letter({ got, want }) {
     let className = "Letter";
-    let letter = want;
+    let letter = displayLetter(want);
 
     if (got === want) {
         className = "Letter--valid";
@@ -34,20 +33,9 @@ function Letter({ caretRef, got, want }) {
         className = "Letter--ghosted";
     } else if (want === "") {
         className = "Letter--extra";
-        letter = got;
+        letter = displayLetter(got);
     } else {
         className = "Letter--invalid";
-    }
-
-    if (caretRef) {
-        return (
-            <div
-                ref={caretRef}
-                className={`${className} Special`}
-            >
-                {letter}
-            </div>
-        );
     }
 
     return (
@@ -57,17 +45,14 @@ function Letter({ caretRef, got, want }) {
     );
 }
 
-function Word({ activeIndex, currentIndex, got, want }) {
-    got = got && got.length > 0 ? got : [""];
-    want = want && want.length > 0 ? want : [""];
-
-    let letters = zipTokens(got, want)
+function Word({ activeIndex, currentIndex, token }) {
+    let showSymbols = token.zipSymbols()
         .map(
-            ({ gotToken, wantToken }, key) =>
+            ({ got, want }, key) =>
                 <Letter
                     key={`letter_#${key}`}
-                    got={gotToken}
-                    want={wantToken}
+                    got={got}
+                    want={want}
                 />
         );
 
@@ -75,47 +60,42 @@ function Word({ activeIndex, currentIndex, got, want }) {
         activeIndex.line === currentIndex.line &&
         activeIndex.word === currentIndex.word
     ) {
-        letters.splice(activeIndex.letter, 0, <Caret key="Caret" />)
+        showSymbols.splice(activeIndex.letter, 0, <Caret key="Caret" />)
     }
 
     let className = "Word";
-    if (
-        currentIndex.line < activeIndex.line ||
-        (
-            currentIndex.line === activeIndex.line &&
-            currentIndex.word < activeIndex.word
-        )
+    const isBeforeActive = currentIndex.line < activeIndex.line ||
+        (currentIndex.line === activeIndex.line &&
+            currentIndex.word < activeIndex.word);
 
-    ) {
-        if (JSON.stringify(got) !== JSON.stringify(want)) {
-            className = "Word--invalid";
-        }
+    if (isBeforeActive && !token.isValid()) {
+        className = "Word--invalid";
     }
 
     return (
         <div className={className}>
-            {letters}
+            {showSymbols}
         </div>
     )
 }
 
-function Line({ activeIndex, currentIndex, got, want }) {
-    const words = zipTokens(got, want)
+function Line({ activeIndex, currentIndex, tokens }) {
+    const showTokens = tokens
         .map(
-            ({ gotToken, wantToken }, key) =>
-                <Word
+            (token, key) => {
+                return <Word
                     key={`word_#${key}`}
                     activeIndex={activeIndex}
                     currentIndex={{ ...currentIndex, word: key }}
-                    got={gotToken}
-                    want={wantToken}
+                    token={token}
                 />
-
+            }
         );
 
-    const gotLine = JSON.stringify(got), wantLine = JSON.stringify(want);
+    const isValid = tokens.every(token => token.isValid());
+
     let className = "Line";
-    if (currentIndex.line < activeIndex.line && gotLine !== wantLine) {
+    if (currentIndex.line < activeIndex.line && !isValid) {
         className = "Line--invalid";
     }
     if (currentIndex.line === activeIndex.line) {
@@ -124,44 +104,65 @@ function Line({ activeIndex, currentIndex, got, want }) {
 
     return (
         <div className={className}>
-            {words}
+            {showTokens}
         </div>
     );
 }
 
-function Text({ activeIndex, got, want }) {
-    const lines = zipTokens(got, want)
-        .map(({ gotToken, wantToken }, key) => {
+function Text({ lines, activeIndex }) {
+    const showLines = lines
+        .map((tokens, key) => {
             return <Line
                 key={`line_#${key}`}
                 activeIndex={activeIndex}
                 currentIndex={{ line: key }}
-                got={gotToken}
-                want={wantToken}
+                tokens={tokens}
             />
         })
 
     return (
         <div>
-            {lines}
+            {showLines}
         </div>
     );
 }
 
-function countValidCharacters(got, want) {
-    if (got === undefined || want === undefined)
-        return 0;
-
-    if (typeof want === "string") {
-        return got === want ? 1 : 0;
+class Token {
+    constructor(want = [], got = []) {
+        this.want = want;
+        this.got = got;
     }
 
-    let validCount = 0;
-    for (const i in want) {
-        validCount += countValidCharacters(got[i], want[i])
+    hasSeperator() {
+        return this.want.some(symbol => Boolean(symbol.match(wordSeperator)));
+    }
+    isWhiteSpace() {
+        return this.want.every(symbol => Boolean(symbol.match(whiteSpace)));
     }
 
-    return validCount;
+    isValid() {
+        return this.want.join() === this.got.join();
+    }
+
+    zipSymbols() {
+        const symbols = Array(Math.max(this.got.length, this.want.length))
+            .fill()
+            .map((_, i) => ({
+                got: this.got[i] ? this.got[i] : "",
+                want: this.want[i] ? this.want[i] : "",
+            }))
+        return symbols;
+    }
+
+    countValidChars() {
+        let count = 0;
+        for (let { got, want } of this.zipSymbols()) {
+            if (got === want && want !== "") {
+                count++;
+            }
+        }
+        return count;
+    }
 }
 
 class TypeArea extends React.Component {
@@ -169,29 +170,30 @@ class TypeArea extends React.Component {
         super(props);
 
         const text = props.children ? props.children : "";
-        const wantLines = text.split(lineSeperator)
-            .map(line => line.split(wordSeperator)
-                .map(word => word.split('')));
-        const gotLines = Array.from(Array(wantLines.length), () => [[]]);
 
-        for (const line of wantLines) {
-            line[line.length - 1].push(returnKey)
+        const lines = [[new Token()]];
+        for (const symbol of text) {
+            const tokens = lines.at(-1);
+            tokens.at(-1).want.push(symbol);
+            if (symbol.match(lineSeperator)) {
+                lines.push([new Token()])
+            } else if (tokens.at(-1).hasSeperator()) {
+                tokens.push(new Token());
+            }
         }
 
         let wordIndex = 0;
-        while (
-            wordIndex < wantLines[0].length - 1 &&
-            wantLines[0][wordIndex].length === 0
-        ) {
+        while (wordIndex < lines[0].length) {
+            if (!lines[0][wordIndex].isWhiteSpace()) {
+                break;
+            }
+            lines[0][wordIndex].got.push(' ');
             wordIndex++;
-            gotLines[0].push([]);
+
         }
         this.state = {
-            wantLines: wantLines,
-            gotLines: gotLines,
+            lines: lines,
             activeIndex: { line: 0, word: wordIndex, letter: 0 },
-            startTime: Date.now(),
-            seconds: 0,
             completedText: false,
         }
 
@@ -205,8 +207,7 @@ class TypeArea extends React.Component {
         const startIndex = Math.max(0, line - beginOffset);
         const endIndex = startIndex + endOffset;
 
-        const gotSlice = this.state.gotLines.slice(startIndex, endIndex);
-        const wantSlice = this.state.wantLines.slice(startIndex, endIndex);
+        const lineSlice = this.state.lines.slice(startIndex, endIndex);
 
         const activeIndex = {
             line: Math.min(line, beginOffset),
@@ -222,8 +223,7 @@ class TypeArea extends React.Component {
                     className="TypeArea"
                 >
                     {<Text
-                        got={gotSlice}
-                        want={wantSlice}
+                        lines={lineSlice}
                         activeIndex={activeIndex}
                     />}
                 </div>
@@ -234,10 +234,12 @@ class TypeArea extends React.Component {
 
     handleInput(e) {
         const callBack = () => {
-            const validChars = countValidCharacters(
-                this.state.gotLines,
-                this.state.wantLines
-            );
+            let validChars = 0;
+            for (let line of this.state.lines) {
+                for (let token of line) {
+                    validChars += token.countValidChars();
+                }
+            }
             this.props.onChange(validChars, this.state.completedText);
         };
 
@@ -248,28 +250,39 @@ class TypeArea extends React.Component {
         } else if (e.key === 'Backspace') {
             this.setState(TypeArea.handleBackspace(e.ctrlKey), callBack);
         }
+
+
     }
 
     static handleCharacter(key) {
         return state => {
             const { line, word, letter } = state.activeIndex;
 
+            let updateSpec = {
+                lines: {
+                    [line]: { [word]: { got: { $push: [key] } } }
+                },
+            };
+
             if (key.match(wordSeperator)) {
-                return update(state, {
-                    gotLines: { [line]: { $push: [[]] } },
-                    activeIndex: {
-                        word: { $set: word + 1 },
-                        letter: { $set: 0 },
-                    },
-                });
+                const newWordIndex = word + 1;
+                if (newWordIndex >= state.lines[line].length) {
+                    updateSpec.lines[line] = {
+                        ...updateSpec.lines[line],
+                        $push: [new Token()],
+                    }
+                }
+                updateSpec.activeIndex = {
+                    word: { $set: newWordIndex },
+                    letter: { $set: 0 },
+                }
+                console.log("Creating a new token", updateSpec)
+                console.log(state.lines[line][word].got)
+            } else {
+                updateSpec.activeIndex = { letter: { $set: letter + 1 } };
             }
 
-            return update(state, {
-                gotLines: {
-                    [line]: { [word]: { $push: [key] } }
-                },
-                activeIndex: { letter: { $set: letter + 1 } },
-            });
+            return update(state, updateSpec);
         }
     }
 
@@ -277,14 +290,14 @@ class TypeArea extends React.Component {
         return state => {
             const { line, word } = state.activeIndex;
 
-            const lineCount = state.wantLines.length;
+            const lineCount = state.lines.length;
             const lineIndex = line + 1;
 
             const completedText = lineIndex === lineCount;
 
             let updateSpec = {
-                gotLines: {
-                    [line]: { [word]: { $push: [returnKey] } },
+                lines: {
+                    [line]: { [word]: { got: { $push: ['\n'] } } },
                 },
                 activeIndex: {
                     line: { $set: Math.min(lineIndex, lineCount) },
@@ -294,69 +307,75 @@ class TypeArea extends React.Component {
                 completedText: { $set: completedText },
             };
 
-            let wordIndex = 0;
             if (lineIndex < lineCount) {
-                let newGotLine = [];
-                const currentLine = state.wantLines[lineIndex];
-                while (
-                    wordIndex < currentLine.length - 1 &&
-                    currentLine[wordIndex].length === 0
-                ) {
-                    newGotLine.push([]);
-                    wordIndex++;
+                const currentLine = state.lines[lineIndex];
+                for (let wordIndex = 0; wordIndex < currentLine.length; wordIndex++) {
+                    updateSpec.activeIndex.word = { $set: wordIndex };
+                    if (!currentLine[wordIndex].isWhiteSpace()) {
+                        break;
+                    }
+                    updateSpec.lines[lineIndex] = {
+                        ...updateSpec.lines[lineIndex],
+                        [wordIndex]: { got: { $push: [" "] } },
+                    };
                 }
-                updateSpec.gotLines[lineIndex] = { $push: newGotLine };
             }
-            updateSpec.activeIndex.word = { $set: wordIndex };
 
             return update(state, updateSpec);
         }
     }
 
     static handleBackspace(ctrlKey) {
+        const deleteLastLetterSplice = [[-1, 1]];
         return state => {
             const { line, word, letter } = state.activeIndex;
 
-            // Current word is not empty.
-            if (state.gotLines[line][word].length > 0) {
-                const splice = ctrlKey ? [[0, state.gotLines[line][word].length]] : [[-1, 1]];
+            // No text entered.
+            if (line === 0 && word === 0 && letter === 0) {
+                return;
+            }
+
+            // Current line is empty.
+            if (word === 0 && letter === 0) {
+                const newLine = line - 1;
+                const newWord = state.lines[newLine].length - 1;
+                const newLetter = state.lines[newLine][newWord].got.length - 1;;
+
                 return update(state, {
-                    gotLines: {
-                        [line]: { [word]: { $splice: splice } }
+                    lines: {
+                        [newLine]: {
+                            [newWord]: {
+                                got: { $splice: deleteLastLetterSplice },
+                            },
+                        },
                     },
                     activeIndex: {
-                        letter: { $set: (ctrlKey ? 0 : letter - 1) },
+                        line: { $set: newLine },
+                        word: { $set: newWord },
+                        letter: { $set: newLetter },
                     },
                 });
             }
 
-            // Current line is empty.
-            if (word === 0) {
-                if (line === 0) return;
+            const newLine = line;
+            const newWord = letter === 0 ? word - 1 : word;
+            const newLetter = ctrlKey ?
+                0 :
+                state.lines[newLine][newWord].got.length - 1;
 
-                const newLine = line - 1;
-                const newWord = state.gotLines[newLine].length - 1;
-                const newLetter = state.gotLines[newLine][newWord].length;
-                return {
-                    activeIndex: {
-                        line: newLine,
-                        word: newWord,
-                        letter: newLetter,
-                    }
-                };
-            }
+            const splice = ctrlKey ?
+                [[0, state.lines[newLine][newWord].got.length]] :
+                [[-1, 1]];
 
-            // Delete current word.
-            const splice = ctrlKey ? [[word, 1], [word - 1, 1, []]] : [[word, 1]];
-            const newLetter = ctrlKey ? 0 : state.gotLines[line][word - 1].length;
             return update(state, {
-                gotLines: {
-                    [line]: { $splice: splice }
+                lines: {
+                    [newLine]: { [newWord]: { got: { $splice: splice } } },
                 },
                 activeIndex: {
-                    word: { $set: word - 1 },
+                    line: { $set: newLine },
+                    word: { $set: newWord },
                     letter: { $set: newLetter },
-                }
+                },
             });
         }
     }

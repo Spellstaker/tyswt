@@ -5,10 +5,13 @@ import TypeArea from './typearea/TypeArea';
 import Result from './result/Result';
 import Timer from './timer/Timer';
 
-const testText = `for _ in range(int(input())):
+const multiLine = `for _ in range(int(input())):
     n, m = map(int, input().split())
     l = [*map(int, input().split())]
     print(min(m, sum(l)))`;
+const oneLiner = `fib = lambda x: 1 if x < 2 else fib(x - 1) + fib(x - 2)`;
+const uwu = "uwu";
+const testText = multiLine;
 
 const GameState = Object.freeze({
     WAITING: Symbol("WAITING"),

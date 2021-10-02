@@ -29,11 +29,11 @@ function Letter({ got, want }) {
 
     if (got === want) {
         className = "Letter--valid";
-    } else if (got === "") {
-        className = "Letter--ghosted";
     } else if (want === "") {
         className = "Letter--extra";
         letter = displayLetter(got, true);
+    } else if (got === "" || got === " ") {
+        className = "Letter--ghosted";
     } else {
         className = "Letter--invalid";
     }

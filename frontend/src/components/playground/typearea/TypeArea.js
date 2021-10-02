@@ -36,7 +36,9 @@ function Letter({ got, want }) {
         className = "Letter--ghosted";
     } else {
         className = "Letter--invalid";
-        letter = displayLetter(want, true);
+        if (want === " ") {
+            letter = displayLetter(got, true);
+        }
     }
 
     return (

@@ -33,9 +33,15 @@ class Playground extends React.Component {
 
         this.timerID = null;
 
+        this.typeAreaRef = React.createRef();
+
         this.onChange = this.onChange.bind(this);
         this.tick = this.tick.bind(this);
         this.startTicking = this.startTicking.bind(this);
+    }
+
+    componentDidMount() {
+        this.focusTypeArea();
     }
 
     componentWillUnmount() { this.stopTicking(); }
@@ -43,7 +49,6 @@ class Playground extends React.Component {
     render() {
         switch (this.state.gameState) {
             case GameState.WAITING:
-                return this.renderWaiting();
             case GameState.PLAYING:
                 return this.renderPlaying();
             case GameState.FINISHED:
@@ -53,21 +58,11 @@ class Playground extends React.Component {
         }
     }
 
-    renderWaiting() {
-        return (
-            <div>
-                <TypeArea onChange={this.onChange}>
-                    {this.state.text}
-                </TypeArea>
-            </div>
-        );
-    }
-
     renderPlaying() {
         return (
             <div>
                 <Timer seconds={this.state.seconds} />
-                <TypeArea onChange={this.onChange}>
+                <TypeArea onChange={this.onChange} ref={this.typeAreaRef}>
                     {this.state.text}
                 </TypeArea>
             </div>
@@ -89,6 +84,10 @@ class Playground extends React.Component {
                 Well something went horribly wrong :/
             </div>
         )
+    }
+
+    focusTypeArea() {
+        this.typeAreaRef.current.focus();
     }
 
     onChange(validChars, completedText) {

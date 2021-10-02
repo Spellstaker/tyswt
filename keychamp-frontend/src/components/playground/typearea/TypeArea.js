@@ -189,13 +189,14 @@ class TypeArea extends React.Component {
             }
             lines[0][wordIndex].got.push(' ');
             wordIndex++;
-
         }
         this.state = {
             lines: lines,
             activeIndex: { line: 0, word: wordIndex, letter: 0 },
             completedText: false,
         }
+
+        this.typeAreaRef = React.createRef();
 
         this.handleInput = this.handleInput.bind(this);
     }
@@ -216,20 +217,22 @@ class TypeArea extends React.Component {
         };
 
         return (
-            <div>
-                <div
-                    tabIndex={1}
-                    onKeyDown={this.handleInput}
-                    className="TypeArea"
-                >
-                    {<Text
-                        lines={lineSlice}
-                        activeIndex={activeIndex}
-                    />}
-                </div>
-            </div >
-
+            <div
+                tabIndex={1}
+                onKeyDown={this.handleInput}
+                className="TypeArea"
+                ref={this.typeAreaRef}
+            >
+                {<Text
+                    lines={lineSlice}
+                    activeIndex={activeIndex}
+                />}
+            </div>
         );
+    }
+
+    focus() {
+        this.typeAreaRef.current.focus();
     }
 
     handleInput(e) {

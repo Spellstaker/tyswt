@@ -276,8 +276,6 @@ class TypeArea extends React.Component {
                     word: { $set: newWordIndex },
                     letter: { $set: 0 },
                 }
-                console.log("Creating a new token", updateSpec)
-                console.log(state.lines[line][word].got)
             } else {
                 updateSpec.activeIndex = { letter: { $set: letter + 1 } };
             }

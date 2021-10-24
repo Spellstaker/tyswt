@@ -4,6 +4,7 @@ import update from 'react-addons-update';
 import TypeArea from './typearea/TypeArea';
 import Result from './result/Result';
 import Timer from './timer/Timer';
+import Loader from './loading/Loader';
 
 const multiLine = `for _ in range(int(input())):
     n, m = map(int, input().split())
@@ -14,6 +15,7 @@ const uwu = "uwu";
 const testText = multiLine;
 
 const GameState = Object.freeze({
+    LOADING: Symbol("LOADING"),
     WAITING: Symbol("WAITING"),
     PLAYING: Symbol("PLAYING"),
     FINISHED: Symbol("FINISHED"),
@@ -24,12 +26,12 @@ class Playground extends React.Component {
         super(props);
 
         this.state = {
-            text: testText,
+            text: "",
             seconds: 0,
             startTime: null,
             validChars: 0,
             wantChars: 0,
-            gameState: GameState.WAITING,
+            gameState: GameState.LOADING,
         };
 
         this.timerID = null;
@@ -41,14 +43,37 @@ class Playground extends React.Component {
         this.startTicking = this.startTicking.bind(this);
     }
 
+    isPlaying() {
+        return this.state.gameState === GameState.WAITING ||
+            this.state.gameState === GameState.PLAYING;
+    }
+
     componentDidMount() {
-        this.focusTypeArea();
+        const callBack = () => {
+            if (this.isPlaying()) {
+                this.focusTypeArea();
+            }
+        };
+
+        fetch("http://localhost:8090/snippet?lang=python")
+            .then(res => res.json())
+            .then(res => {
+                this.setState({
+                    text: res.snippet,
+                    gameState: GameState.WAITING,
+
+                }, callBack)
+            })
+            .catch(err => console.log(err))
+
     }
 
     componentWillUnmount() { this.stopTicking(); }
 
     render() {
         switch (this.state.gameState) {
+            case GameState.LOADING:
+                return this.renderLoading();
             case GameState.WAITING:
             case GameState.PLAYING:
                 return this.renderPlaying();
@@ -57,6 +82,10 @@ class Playground extends React.Component {
             default:
                 return this.renderOops();
         }
+    }
+
+    renderLoading() {
+        return <Loader />;
     }
 
     renderPlaying() {

@@ -43,6 +43,10 @@ func (s *Server) handleSnippetGet() http.HandlerFunc {
 			Snippet: snippet,
 		}
 
+		// Enable CORS.
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(res)
 	}

@@ -8,7 +8,7 @@ import (
 
 var (
 	errLangNotSpecified = errors.New("'lang' specified was empty")
-	errLangNotFound     = errors.New("Did not find requested language")
+	errLangNotFound     = errors.New("did not find requested language")
 )
 
 var snippets = map[string][]string{
